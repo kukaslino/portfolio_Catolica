@@ -1,5 +1,5 @@
-#include <Wire.h>
-#include <PN532_I2C.h>
+#include <SPI.h>
+#include <PN532_SPI.h>
 #include <PN532.h>
 #include <NfcAdapter.h>
 #include <SD.h>
@@ -46,8 +46,8 @@
 TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300); //300 É A SENSITIVIDADE
 MCUFRIEND_kbv tft(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
 
-PN532_I2C pn532_i2c(Wire); //Variaveis NFC
-NfcAdapter nfc = NfcAdapter(pn532_i2c);
+PN532_SPI pn532_spi(SPI,47); //Variaveis NFC
+NfcAdapter nfc = NfcAdapter(pn532_spi);
 String tagId = "None";
 byte nuidPICC[4];
 
@@ -381,7 +381,3 @@ void checkFingerprint() {
   //Quanto mais alta a confiança melhor
   Serial.print("Digital encontrada!");
 }  //checkFingerprint
-
-
-
-
