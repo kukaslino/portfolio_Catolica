@@ -335,28 +335,6 @@ void verify_Biometry(){
 
 }
 
-void switch_commands(int i){
-
-  /*switch (i) {
-    case 1:
-      storeFingerprint();
-      break;
-    case 2:
-      checkFingerprint();
-      break;
-    case 3:
-      printStoredFingerprintsCount();
-      break;
-    case 4:
-      deleteFingerprint();
-      break;
-    case 5:
-      emptyDatabase();
-      break;
-  }*/
-
-}
-
 //Verifica se a digital está cadastrada
 void checkFingerprint() {
   Serial.println("Encoste o dedo no sensor");
