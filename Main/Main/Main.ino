@@ -1,6 +1,3 @@
-#include <SPI.h>
-#include <PN532_SPI.h>
-#include <PN532.h>
 #include <NfcAdapter.h>
 #include <SD.h>
 #include <Adafruit_Fingerprint.h>
@@ -46,13 +43,13 @@
 TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300); //300 É A SENSITIVIDADE
 MCUFRIEND_kbv tft(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
 
-PN532_SPI pn532_spi(SPI,47); //Variaveis NFC
-NfcAdapter nfc = NfcAdapter(pn532_spi);
 String tagId = "None";
 byte nuidPICC[4];
 
 const int chipSelect = 53; //Variaveis Card SD
 File myFile;
+String lastUID = ""; // Armazena o último UID registrado
+String encryptionKey = "Xmitt"; // Chave de criptografia
 
 const uint32_t password = 0x0; //Variaveis biometria
 Adafruit_Fingerprint fingerprintSensor = Adafruit_Fingerprint(&Serial2, password);
@@ -79,8 +76,7 @@ TSPoint waitTouch() {
 void setup() {
 
   Serial.begin(9600);
-
-  nfc.begin();
+  Serial1.begin(9600);
   
   tft.reset();
   tft.begin(0x9341); // CÓDIGO DO DRIVER DO SEU DISPLAY
@@ -205,58 +201,71 @@ void Valid_NFC(){
 
   tagId = " ";
 
-  if (nfc.tagPresent())
- {
-    NfcTag tag = nfc.read();
-    tag.print();
-    tagId = tag.getUidString();
+  Serial1.write('R'); // Envia o comando 'R' para o UNO
 
-    Write_TXT(tagId);
+  Serial.println( Serial1.available() );
 
-    if (tagId = " "){
-    
+  if (Serial1.available() > 0) {
+    String cardData = Serial1.readStringUntil('\n');
+
+    Serial.println(cardData);
+
+    if ( ( !cardData.startsWith("Tag") ) && ( cardData.length() == 12 ) ) { // Valida se o dado é um UID
+
+      Serial.println("UID do Cartão NFC: " + cardData); // Exibe apenas o UID no monitor serial
+
+      // Grava no SD apenas se o UID for diferente do último registrado
+      if (cardData != lastUID) {
+        String encryptedData = encrypt(cardData, encryptionKey); // Criptografa o UID
+        Write_SD(encryptedData);
+        lastUID = cardData; // Atualiza o último UID registrado
+      }
+    }else{
+
       delay(1000);
 
       Valid_NFC();
-    }
- }
 
+    }
+  }
 }
 
-void Write_TXT( String tagId ){
-
-  if (!SD.begin(chipSelect)){
-    Serial.println ("Erro no leitor de cartão SD");
-  }else{
-    Serial.println ("Leitor de cartão online!");
+// Função de criptografia XOR
+String encrypt(String data, String key) {
+  String encryptedData = data;
+  for (int i = 0; i < data.length(); i++) {
+    encryptedData[i] = data[i] ^ key[i % key.length()]; // XOR com a chave
   }
+  return encryptedData;
+}
 
+// Função para escrever no SD
+void Write_SD(String encryptedData) {
+
+   // Inicializa o cartão SD
+  if (!SD.begin(chipSelect)) {
+    Serial.println("Erro ao inicializar o cartão SD");
+    return;
+  }
+  Serial.println("Cartão SD inicializado com sucesso");
+  
+  // Remove o arquivo anterior antes de criar um novo
+  SD.remove("card1.txt");
+  
   myFile = SD.open("card1.txt", FILE_WRITE);
 
-   // if the file opened okay, write to it:
+  // Se o arquivo foi aberto, grava nele
   if (myFile) {
-    Serial.print("Writing to card1.txt...");
-    myFile.println( tagId );
-    // close the file:
-    myFile.close();
+    Serial.print("Writing encrypted data to card1.txt...");
+    myFile.println(encryptedData);
+    myFile.close(); // Fecha o arquivo
     Serial.println("done.");
-  } else {
-    // if the file didn't open, print an error:
-    Serial.println("error opening .txt");
-  }
 
-  myFile = SD.open("card1.txt");
-  if (myFile) {
-    Serial.println("card1.txt:");
+    String decryptedData = encrypt(encryptedData, encryptionKey); //Testa descriptogração
+    Serial.println("Dado descriptografado (UID): " + decryptedData);
 
-    // read from the file until there's nothing else in it:
-    while (myFile.available()) {
-      Serial.write(myFile.read());
-    }
-    // close the file:
-    myFile.close();
   } else {
-    // if the file didn't open, print an error:
+    // Se o arquivo não abriu, exibe erro
     Serial.println("error opening card1.txt");
   }
 }
@@ -332,28 +341,6 @@ void verify_Biometry(){
     checkFingerprint();
 
   }
-
-}
-
-void switch_commands(int i){
-
-  /*switch (i) {
-    case 1:
-      storeFingerprint();
-      break;
-    case 2:
-      checkFingerprint();
-      break;
-    case 3:
-      printStoredFingerprintsCount();
-      break;
-    case 4:
-      deleteFingerprint();
-      break;
-    case 5:
-      emptyDatabase();
-      break;
-  }*/
 
 }
 
