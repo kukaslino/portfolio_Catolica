@@ -56,8 +56,9 @@ Adafruit_Fingerprint fingerprintSensor = Adafruit_Fingerprint(&Serial2, password
 int location = 0;
 
 int X, Y;
-long corBot[3] = {DESLIGADO, DESLIGADO, DESLIGADO};
-bool valid_nfc = false;
+long corBot[3]    = {DESLIGADO, DESLIGADO, DESLIGADO}; //Variaveis de controle
+bool valid_nfc    = false;
+bool emulate_card = false;
 
 TSPoint waitTouch() {
   TSPoint p;
@@ -71,6 +72,49 @@ TSPoint waitTouch() {
   p.y = map(p.y, TS_BOT, TS_TOP, 0, 320);
   
   return p;
+}
+
+String read_SD(int fileNumber) {
+
+  // Monta o nome do arquivo com base no número fornecido
+  String fileName = "card" + String(fileNumber) + ".txt";
+
+  // Inicializa o cartão SD
+  if (!SD.begin(chipSelect)) {
+    Serial.println("Erro ao inicializar o cartão SD");
+    return "";
+  }
+
+  // Abre o arquivo em modo leitura
+  File myFile = SD.open(fileName);
+  if (myFile) {
+    Serial.print("Lendo o conteúdo de ");
+    Serial.println(fileName);
+
+    // Lê o conteúdo do arquivo e armazena na String `fileContent`
+    String fileContent = "";
+    while (myFile.available()) {
+      fileContent += (char)myFile.read();
+    }
+    myFile.close(); // Fecha o arquivo após a leitura
+
+    // Descriptografa o conteúdo lido
+    String decryptedContent = encrypt(fileContent, encryptionKey); // Usa a mesma função para descriptografar
+    return decryptedContent;
+  } else {
+    Serial.print("Erro ao abrir ");
+    Serial.println(fileName);
+    return "";
+  }
+}
+
+// Função de criptografia XOR
+String encrypt(String data, String key) {
+  String encryptedData = data;
+  for (int i = 0; i < data.length(); i++) {
+    encryptedData[i] = data[i] ^ key[i % key.length()]; // XOR com a chave
+  }
+  return encryptedData;
 }
 
 void setup() {
@@ -107,24 +151,37 @@ void DetectButtons() {
 
     if (Y > 220 && Y < 300) { // LOGICA PARA O BOTAO 3
       Serial.println ("Button 3");
-      if (corBot[2] == LIGADO) corBot[2] = DESLIGADO;
-      else corBot[2] = LIGADO;
-      draw_Buttons(3);
+      if (valid_nfc){
+        Valid_NFC( 3 );
+      }else if ( emulate_card ){
+        Emulate_Card( 3 );
+      }
     }
 
 
     if (Y > 120 && Y < 200) { // LOGICA PARA O BOTAO 2
       Serial.println ("Button 2");
       if (valid_nfc){
-        Valid_NFC();
-      }else if (corBot[1] == LIGADO) corBot[1] = DESLIGADO;
-      else corBot[1] = LIGADO;
+        Valid_NFC( 2 );
+      }else if ( !emulate_card ){
+        Tela_Emulate();
+      }else if ( emulate_card){
+        Emulate_Card( 2 );
+      }else corBot[1] = LIGADO;
       draw_Buttons(2);
     }
 
     if (Y > 20 && Y < 100) { // LOGICA PARA O BOTAO 1
       Serial.println ("Button 1");
-      Tela_NFC();
+      if (valid_nfc){
+        Valid_NFC( 1 );
+      }else if ( emulate_card ){
+        Emulate_Card( 1 );
+      }else{
+
+        Tela_NFC();
+
+      }
     }
 
   }
@@ -148,7 +205,7 @@ void draw_Buttons(int type) {
       tft.setTextColor(BLACK);
       tft.setTextSize (2);
       tft.setCursor(30, 150);
-      tft.println("Utilizar cartao");
+      tft.println("Emular Cartão");
       break;
 
     case 3:
@@ -157,7 +214,7 @@ void draw_Buttons(int type) {
       tft.setTextColor(BLACK);
       tft.setTextSize (2);
       tft.setCursor(30, 250);
-      tft.println("Logoof");
+      tft.println("Formatar disppsitivo");
       break;
 
     default:
@@ -172,10 +229,10 @@ void draw_Buttons(int type) {
       tft.println("Ler NFC");
 
       tft.setCursor(30, 150);
-      tft.println("Utilizar cartao");
+      tft.println("Emular Cartão");
 
       tft.setCursor(30, 250);
-      tft.println("LogOff");
+      tft.println("Formatar disppsitivo");
   }
 
 }
@@ -195,7 +252,47 @@ void Tela_NFC(){
 
 }
 
-void Valid_NFC(){
+void Tela_Emulate(){
+
+  tft.fillRect  (20, 20 , 190, 80, corBot[0]);
+  tft.fillRect  (20, 120, 190, 80, corBot[1]);
+  tft.fillRect  (20, 220, 190, 80, corBot[2]);
+
+  tft.setTextColor(BLACK);
+  tft.setTextSize (2);
+
+  tft.setCursor(30, 50);
+  tft.println("Cartão 01");
+
+  tft.setCursor(30, 150);
+  tft.println("Cartão 02");
+
+  tft.setCursor(30, 250);
+  tft.println("Cartão 03");
+
+  emulate_card = true;
+
+}
+
+void Emulate_Card( int card_select ){
+
+  Serial.println ("Emulando NFC");
+
+  Serial.write( 'E' );
+
+  Serial1.println( read_SD( card_select ) );
+
+  if (Serial1.available() > 0) {
+
+    String cardData = Serial1.readStringUntil('END');
+
+    Serial.println(cardData);
+
+  }
+
+}
+
+void Valid_NFC( int fileNumber ){
 
   Serial.println ("Validando NFC");
 
@@ -217,7 +314,7 @@ void Valid_NFC(){
       // Grava no SD apenas se o UID for diferente do último registrado
       if (cardData != lastUID) {
         String encryptedData = encrypt(cardData, encryptionKey); // Criptografa o UID
-        Write_SD(encryptedData);
+        Write_SD(encryptedData, fileNumber);
         lastUID = cardData; // Atualiza o último UID registrado
       }
     }else{
@@ -230,43 +327,35 @@ void Valid_NFC(){
   }
 }
 
-// Função de criptografia XOR
-String encrypt(String data, String key) {
-  String encryptedData = data;
-  for (int i = 0; i < data.length(); i++) {
-    encryptedData[i] = data[i] ^ key[i % key.length()]; // XOR com a chave
-  }
-  return encryptedData;
-}
-
 // Função para escrever no SD
-void Write_SD(String encryptedData) {
-
-   // Inicializa o cartão SD
+void Write_SD(String encryptedData, int fileNumber) {
   if (!SD.begin(chipSelect)) {
     Serial.println("Erro ao inicializar o cartão SD");
     return;
   }
-  Serial.println("Cartão SD inicializado com sucesso");
+  
+  // Cria o nome do arquivo com base no número
+  String fileName = "card" + String(fileNumber) + ".txt";
   
   // Remove o arquivo anterior antes de criar um novo
-  SD.remove("card1.txt");
-  
-  myFile = SD.open("card1.txt", FILE_WRITE);
+  SD.remove(fileName.c_str());
+
+  myFile = SD.open(fileName.c_str(), FILE_WRITE);
 
   // Se o arquivo foi aberto, grava nele
   if (myFile) {
-    Serial.print("Writing encrypted data to card1.txt...");
+    Serial.print("Writing encrypted data to ");
+    Serial.print(fileName);
+    Serial.println("...");
     myFile.println(encryptedData);
     myFile.close(); // Fecha o arquivo
     Serial.println("done.");
 
-    String decryptedData = encrypt(encryptedData, encryptionKey); //Testa descriptogração
+    String decryptedData = encrypt(encryptedData, encryptionKey); // Testa descriptografação
     Serial.println("Dado descriptografado (UID): " + decryptedData);
-
   } else {
-    // Se o arquivo não abriu, exibe erro
-    Serial.println("error opening card1.txt");
+    Serial.print("Erro ao abrir ");
+    Serial.println(fileName);
   }
 }
 
@@ -338,14 +427,19 @@ void verify_Biometry(){
 
   }else{
 
-    checkFingerprint();
+    if ( !checkFingerprint() ){
+
+      Serial.println( 'Digital não encontrada, tente novamente' );
+      checkFingerprint();
+
+    }
 
   }
 
 }
 
 //Verifica se a digital está cadastrada
-void checkFingerprint() {
+bool checkFingerprint() {
   Serial.println("Encoste o dedo no sensor");
   //Espera até pegar uma imagem válida da digital
   while (fingerprintSensor.getImage() != FINGERPRINT_OK)
@@ -355,13 +449,13 @@ void checkFingerprint() {
   if (fingerprintSensor.image2Tz() != FINGERPRINT_OK) {
     //Se chegou aqui deu erro, então abortamos os próximos passos
     Serial.println("Erro image2Tz");
-    return;
+    return false;
   }
   //Procura por este padrão no banco de digitais
   if (fingerprintSensor.fingerFastSearch() != FINGERPRINT_OK) {
     //Se chegou aqui significa que a digital não foi encontrada
     Serial.println("Digital não encontrada");
-    return;
+    return false;
   }
   //Se chegou aqui a digital foi encontrada
   //Mostramos a posição onde a digital estava salva e a confiança
