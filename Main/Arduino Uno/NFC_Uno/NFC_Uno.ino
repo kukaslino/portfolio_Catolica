@@ -2,23 +2,18 @@
 #include <PN532_SPI.h>
 #include <PN532.h>
 #include <NfcAdapter.h>
-#include <Wire.h>
+#include <emulatetag.h>
+#include <NdefMessage.h>
 
-PN532_SPI pn532spi(SPI, 10);
-PN532 nfc(pn532spi);
+PN532_SPI pn532_spi(SPI, 10);
+NfcAdapter nfc = NfcAdapter(pn532_spi);
+EmulateTag nfcEmulate(pn532_spi);
 
 String emulatedUID = "";  // Variável para armazenar o UID para emulação
 
 void setup() {
   Serial.begin(9600); // Comunicação serial para receber UID
-  
   nfc.begin();
-  uint32_t versiondata = nfc.getFirmwareVersion();
-  if (!versiondata) {
-    Serial.print("PN53x não encontrado. Verifique a conexão.");
-    while (1);
-  }
-
 }
 
 void loop() {
@@ -28,7 +23,7 @@ void loop() {
     if (command == 'R') { // Comando para ler o cartão
       Ler_Cartao();
     } else if (command == 'E') { // Comando para iniciar a emulação
-      ReceberUID();
+      emulatedUID = ReceberUID();
       Emulate_Card(emulatedUID);
     }
     
@@ -37,42 +32,60 @@ void loop() {
 }
 
 void Ler_Cartao() {
-  if (nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength)) {
-    Serial.print("UID detectado: ");
-    for (uint8_t i = 0; i < uidLength; i++) {
-      Serial.print(uid[i], HEX);
-    }
-    Serial.println();
-  } else {
-    Serial.println("Nenhum cartão detectado.");
+  if (nfc.tagPresent()) {
+    NfcTag tag = nfc.read();
+    String uid = tag.getUidString();
+    Serial.println(uid);
   }
 }
 
 // Função para receber o UID via serial
-void ReceberUID() {
-  emulatedUID = ""; // Limpa o UID anterior
+String ReceberUID() {
+  String uid = ""; // Limpa o UID anterior
 
   // Espera o UID via serial
   while (Serial.available() == 0) {
     delay(10);  // Pequeno delay para evitar espera ativa
   }
 
-  emulatedUID = Serial.readStringUntil('\n'); // Lê o UID como string até o caractere de nova linha
-  Serial.print("UID para emulação recebido: ");
-  Serial.println(emulatedUID);
+  uid = Serial.readStringUntil('\n'); // Lê o UID como string até o caractere de nova linha
+  Serial.print("emulação recebido: ");
+  Serial.println(uid);
+
+  return uid;
 }
 
 // Função para emular o cartão NFC com o UID especificado
 void Emulate_Card(String uidToEmulate) {
-  uint8_t ndefRecord[] = {
-    0xD1, 0x01, 0x0E, 0x54, 0x02, 0x65, 0x6E,  // Header da mensagem NDEF
-    'E', 'm', 'u', 'l', 'a', 't', 'e',          // Mensagem de exemplo
-    ' ', 'T', 'a', 'g'
-  };
-  nfc.emulateTag(ndefRecord, sizeof(ndefRecord), uidToEmulate.c_str());
-  Serial.println("Emulação NFC ativa com o UID: " + uidToEmulate);
-  delay(1000);  // Delay para manter a emulação ativa por algum tempo
+  // Converte o UID de String para uint8_t array
+  uint8_t uidBytes[4];
+  for (int i = 0; i < 4; i++) {
+    String byteString = uidToEmulate.substring(i * 3, i * 3 + 2);  // Ajuste para espaçamento no formato "22 2B 55 CE"
+    uidBytes[i] = (uint8_t) strtol(byteString.c_str(), NULL, 16);
+  }
 
-  nfc.stopEmulation(); // Finaliza a emulação após o delay
-  Serial.println("Emulação finalizada.");
+  // Verificação: Imprime o conteúdo de uidBytes para confirmação
+  Serial.print("emulação (Bytes): ");
+  for (int i = 0; i < 4; i++) {
+    Serial.print("0x");
+    if (uidBytes[i] < 0x10) Serial.print("0");
+    Serial.print(uidBytes[i], HEX);
+    Serial.print(" ");
+  }
+  Serial.println();
+
+  // Configura o UID para emulação
+  nfcEmulate.setUid(uidBytes);  // Configura o UID para emulação
+  nfcEmulate.init();
+  nfcEmulate.emulate();
+
+  if (nfcEmulate.writeOccured()) {
+    Serial.println("\nWrite occurred!");
+    uint8_t* tag_buf;
+    uint16_t length;
+    
+    nfcEmulate.getContent(&tag_buf, &length);
+    NdefMessage msg = NdefMessage(tag_buf, length);
+    msg.print();
+  }
 }

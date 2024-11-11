@@ -29,15 +29,15 @@
 
 
 /*____CALIBRAR TFT LCD_____*/
-#define YP A1
-#define XM A2
-#define YM 7
-#define XP 6
+#define YP A2
+#define XM A1
+#define YM 6
+#define XP 7
 
-#define TS_LEFT 162
-#define TS_RT   897
-#define TS_TOP  929
-#define TS_BOT  205
+#define TS_LEFT 886
+#define TS_RT   177
+#define TS_TOP  935
+#define TS_BOT  203
 /*______FIM DA CALIBRAÇÃO______*/
 
 TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300); //300 É A SENSITIVIDADE
@@ -49,6 +49,7 @@ byte nuidPICC[4];
 const int chipSelect = 53; //Variaveis Card SD
 File myFile;
 String lastUID = ""; // Armazena o último UID registrado
+String cardData = "";
 String encryptionKey = "Xmitt"; // Chave de criptografia
 
 const uint32_t password = 0x0; //Variaveis biometria
@@ -127,7 +128,7 @@ void setup() {
   tft.setRotation(2);
   tft.fillScreen(BLACK);
 
-  verify_Biometry();
+  //verify_Biometry();
 
   tft.fillScreen(BLACK);
 
@@ -241,12 +242,21 @@ void Tela_NFC(){
 
   tft.fillScreen(BLACK);
 
+  tft.fillRect  (20, 20 , 190, 80, YELLOW);
   tft.fillRect  (20, 120, 190, 80, YELLOW);
+  tft.fillRect  (20, 220, 190, 80, YELLOW);
 
   tft.setTextColor(BLACK);
   tft.setTextSize (2);
+
+  tft.setCursor(30, 50);
+  tft.println("Cartao 01");
+
   tft.setCursor(30, 150);
-  tft.println("Utilizar cartao");
+  tft.println("Cartao 02");
+
+  tft.setCursor(30, 250);
+  tft.println("Cartao 03");
 
   valid_nfc = true;
 
@@ -254,21 +264,23 @@ void Tela_NFC(){
 
 void Tela_Emulate(){
 
-  tft.fillRect  (20, 20 , 190, 80, corBot[0]);
-  tft.fillRect  (20, 120, 190, 80, corBot[1]);
-  tft.fillRect  (20, 220, 190, 80, corBot[2]);
+  tft.fillScreen(BLACK);
+
+  tft.fillRect  (20, 20 , 190, 80, RED);
+  tft.fillRect  (20, 120, 190, 80, RED);
+  tft.fillRect  (20, 220, 190, 80, RED);
 
   tft.setTextColor(BLACK);
   tft.setTextSize (2);
 
   tft.setCursor(30, 50);
-  tft.println("Cartão 01");
+  tft.println("Cartao 01");
 
   tft.setCursor(30, 150);
-  tft.println("Cartão 02");
+  tft.println("Cartao 02");
 
   tft.setCursor(30, 250);
-  tft.println("Cartão 03");
+  tft.println("Cartao 03");
 
   emulate_card = true;
 
@@ -278,13 +290,17 @@ void Emulate_Card( int card_select ){
 
   Serial.println ("Emulando NFC");
 
-  Serial.write( 'E' );
+  cardData = read_SD( card_select );
 
-  Serial1.println( read_SD( card_select ) );
+  Serial.println( cardData );
+
+  Serial1.write( 'E' );
+
+  Serial1.println( cardData );
 
   if (Serial1.available() > 0) {
 
-    String cardData = Serial1.readStringUntil('END');
+    cardData = Serial1.readStringUntil('END');
 
     Serial.println(cardData);
 
@@ -321,7 +337,7 @@ void Valid_NFC( int fileNumber ){
 
       delay(1000);
 
-      Valid_NFC();
+      Valid_NFC( fileNumber );
 
     }
   }
