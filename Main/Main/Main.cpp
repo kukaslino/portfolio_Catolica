@@ -1,3 +1,5 @@
+#ifdef ARDUINO
+
 //#ifndef UNIT_TEST
 #include <NfcAdapter.h>
 #include <SD.h>
@@ -6,12 +8,7 @@
 #include <Adafruit_TFTLCD.h> 
 #include <TouchScreen.h>
 #include <MCUFRIEND_kbv.h>
-
-#ifdef ARDUINO
 #include <avr/wdt.h>
-#endif
-
-#ifdef ARDUINO
 
 // DEFINIÇÕES DE PINOS
 #define LCD_CS A3

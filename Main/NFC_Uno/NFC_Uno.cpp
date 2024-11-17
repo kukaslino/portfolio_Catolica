@@ -1,11 +1,11 @@
+#ifdef ARDUINO
+
 #include <SPI.h>
 #include <PN532_SPI.h>
 #include <PN532.h>
 #include <NfcAdapter.h>
 #include <emulatetag.h>
 #include <NdefMessage.h>
-
-#ifdef ARDUINO
 
 PN532_SPI pn532_spi(SPI, 10);
 NfcAdapter nfc = NfcAdapter(pn532_spi);
