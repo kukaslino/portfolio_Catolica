@@ -8,7 +8,9 @@
    See README.md for details on which files to include in your sketch.
 */
 
+#ifdef ARDUINO
 #include <Arduino.h>
+#endif
 
 #ifdef NDEF_USE_SERIAL
 void PrintHex(const byte *data, const long numBytes);

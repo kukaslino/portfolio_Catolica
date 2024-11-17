@@ -2,7 +2,9 @@
 #define NdefRecord_h
 
 #include <Due.h>
+#ifdef ARDUINO
 #include <Arduino.h>
+#endif
 #include <Ndef.h>
 
 #define TNF_EMPTY 0x0
