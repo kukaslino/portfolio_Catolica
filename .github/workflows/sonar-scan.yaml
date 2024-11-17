@@ -29,8 +29,8 @@ jobs:
       with:
         projectBaseDir: .
         args: >
-          -Dsonar.organization=my-org
           -Dsonar.projectKey=my_cpp_project
+          -Dsonar.verbose=true
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
