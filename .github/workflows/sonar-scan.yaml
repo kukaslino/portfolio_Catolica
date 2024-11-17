@@ -31,8 +31,6 @@ jobs:
         args: >
           -Dsonar.organization=my-org
           -Dsonar.projectKey=my_cpp_project
-          -Dsonar.host.url=http://localhost:9000
-          -Dsonar.login=${{ secrets.SONAR_TOKEN }}
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
