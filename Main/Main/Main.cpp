@@ -565,4 +565,12 @@ void Iniciate_SD(){
 
 //#endif
 
+#else
+
+#include <iostream>
+int main() {
+    std::cout << "Simulando ambiente Arduino\n";
+    return 0;
+}
+
 #endif

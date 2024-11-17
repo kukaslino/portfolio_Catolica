@@ -92,4 +92,12 @@ void Emulate_Card(String uidToEmulate) {
   }
 }
 
+#else
+
+#include <iostream>
+int main() {
+    std::cout << "Simulando ambiente Arduino\n";
+    return 0;
+}
+
 #endif
