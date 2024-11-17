@@ -1,14 +1,14 @@
 //#ifndef UNIT_TEST
-#include <NfcAdapter.h>
 #ifdef ARDUINO
+#include <NfcAdapter.h>
 #include <SD.h>
 #include <avr/wdt.h>
-#endif
 #include <Adafruit_Fingerprint.h>
 #include <Adafruit_GFX.h>    
 #include <Adafruit_TFTLCD.h> 
 #include <TouchScreen.h>
 #include <MCUFRIEND_kbv.h>
+#endif
 
 
 // DEFINIÇÕES DE PINOS
