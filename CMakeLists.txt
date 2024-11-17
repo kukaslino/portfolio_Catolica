@@ -14,5 +14,5 @@ add_executable(Main
 
 # Adicionar o segundo programa (NFC_Uno)
 add_executable(NFC_Uno
-    Main/Arduino Uno/NFC_Uno/NFC_Uno.cpp
+    Main/NFC_Uno/NFC_Uno.cpp
 )
