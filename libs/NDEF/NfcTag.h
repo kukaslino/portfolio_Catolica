@@ -2,7 +2,9 @@
 #define NfcTag_h
 
 #include <inttypes.h>
+#ifdef ARDUINO
 #include <Arduino.h>
+#endif
 #include <NdefMessage.h>
 
 class NfcTag
