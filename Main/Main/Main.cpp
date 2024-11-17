@@ -1,13 +1,14 @@
 //#ifndef UNIT_TEST
-#ifdef ARDUINO
 #include <NfcAdapter.h>
 #include <SD.h>
-#include <avr/wdt.h>
 #include <Adafruit_Fingerprint.h>
 #include <Adafruit_GFX.h>    
 #include <Adafruit_TFTLCD.h> 
 #include <TouchScreen.h>
 #include <MCUFRIEND_kbv.h>
+
+#ifdef ARDUINO
+#include <avr/wdt.h>
 #endif
 
 
@@ -70,8 +71,14 @@ bool format_system = false;
 bool valid_return  = false;
 
 void resetArduino() {
+
+  #ifdef ARDUINO
+
     wdt_enable(WDTO_15MS); // Configura o Watchdog Timer para reiniciar em 15ms
     while (true) {}        // Entra em loop infinito até o watchdog acionar o reset
+
+  #endif
+
 }
 
 TSPoint waitTouch() {

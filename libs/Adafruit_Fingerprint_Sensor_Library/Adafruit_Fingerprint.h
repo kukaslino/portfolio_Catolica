@@ -5,7 +5,9 @@
  * @file Adafruit_Fingerprint.h
  */
 
-#include "Arduino.h"
+#ifdef ARDUINO
+#include <Arduino.h>
+#endif
 #if defined(__AVR__) || defined(ESP8266)
 #include <SoftwareSerial.h>
 #elif defined(FREEDOM_E300_HIFIVE1)
