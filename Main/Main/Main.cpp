@@ -1,6 +1,8 @@
 //#ifndef UNIT_TEST
 #include <NfcAdapter.h>
+#ifdef ARDUINO
 #include <SD.h>
+#endif
 #include <Adafruit_Fingerprint.h>
 #include <Adafruit_GFX.h>    
 #include <Adafruit_TFTLCD.h> 

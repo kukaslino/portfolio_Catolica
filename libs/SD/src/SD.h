@@ -15,9 +15,7 @@
 #ifndef __SD_H__
 #define __SD_H__
 
-#ifdef ARDUINO
 #include <Arduino.h>
-#endif
 
 #include "utility/SdFat.h"
 #include "utility/SdFatUtil.h"
