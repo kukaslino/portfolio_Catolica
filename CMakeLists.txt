@@ -7,8 +7,13 @@ project(portfolio_Catolica)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-# Incluir o diretório de bibliotecas
-include_directories(${CMAKE_SOURCE_DIR}/libs)
+# Incluir todos os subdiretórios dentro de libs
+file(GLOB_RECURSE LIB_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/libs/*")
+foreach(dir ${LIB_INCLUDE_DIRS})
+    if(IS_DIRECTORY ${dir})
+        include_directories(${dir})
+    endif()
+endforeach()
 
 # Adicionar o primeiro programa (Main)
 add_executable(Main
