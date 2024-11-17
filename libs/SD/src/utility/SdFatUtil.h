@@ -23,7 +23,9 @@
    \file
    Useful utility functions.
 */
+#ifdef ARDUINO
 #include <Arduino.h>
+#endif
 #ifdef __AVR__
   #include <avr/pgmspace.h>
   /** Store and print a string in flash memory.*/
