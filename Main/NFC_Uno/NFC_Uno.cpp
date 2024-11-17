@@ -4,7 +4,6 @@
 #include <NfcAdapter.h>
 #include <emulatetag.h>
 #include <NdefMessage.h>
-#include <Arduino.h>
 
 PN532_SPI pn532_spi(SPI, 10);
 NfcAdapter nfc = NfcAdapter(pn532_spi);
