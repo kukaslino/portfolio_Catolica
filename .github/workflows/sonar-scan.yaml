@@ -33,5 +33,5 @@ jobs:
           -Dsonar.verbose=true
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        SONAR_HOST_URL: 127.0.0.1:9000
+        SONAR_HOST_URL: http://127.0.0.1:9000
         SONAR_SCANNER_OPTS: "-Djava.net.preferIPv4Stack=true"
