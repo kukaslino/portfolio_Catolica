@@ -7,7 +7,7 @@
 #include <TouchScreen.h>
 #include <MCUFRIEND_kbv.h>
 #include <avr/wdt.h>
-#include <Arduino.h>
+
 
 // DEFINIÇÕES DE PINOS
 #define LCD_CS A3
