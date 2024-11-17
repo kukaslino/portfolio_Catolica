@@ -5,6 +5,8 @@
 #include <emulatetag.h>
 #include <NdefMessage.h>
 
+#ifdef ARDUINO
+
 PN532_SPI pn532_spi(SPI, 10);
 NfcAdapter nfc = NfcAdapter(pn532_spi);
 EmulateTag nfcEmulate(pn532_spi);
@@ -89,3 +91,5 @@ void Emulate_Card(String uidToEmulate) {
     msg.print();
   }
 }
+
+#endif

@@ -11,6 +11,7 @@
 #include <avr/wdt.h>
 #endif
 
+#ifdef ARDUINO
 
 // DEFINIÇÕES DE PINOS
 #define LCD_CS A3
@@ -566,3 +567,5 @@ void Iniciate_SD(){
 }
 
 //#endif
+
+#endif
