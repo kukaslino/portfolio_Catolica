@@ -9,11 +9,13 @@
 
 //#define USE_SERIAL
 
+#ifdef ARDUINO
 #if ARDUINO < 101
 #define USE_GFX_KBV
 #include "ADA_GFX_kbv.h"
 #else
 #include "Adafruit_GFX.h"
+#endif
 #endif
 
 class MCUFRIEND_kbv : public Adafruit_GFX {
