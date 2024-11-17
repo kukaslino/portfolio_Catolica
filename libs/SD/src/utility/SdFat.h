@@ -28,7 +28,9 @@
 #endif
 #include "Sd2Card.h"
 #include "FatStructs.h"
+#ifdef ARDUINO
 #include <Print.h>
+#endif
 //------------------------------------------------------------------------------
 /**
    Allow use of deprecated functions if non-zero
