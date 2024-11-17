@@ -7,6 +7,9 @@ project(portfolio_Catolica)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+# Inclua o diretório das bibliotecas
+include_directories(${CMAKE_SOURCE_DIR}/libs)
+
 # Adicionar o primeiro programa (Main)
 add_executable(Main
     Main/Main/Main.cpp
