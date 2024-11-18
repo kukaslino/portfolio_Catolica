@@ -1,6 +1,3 @@
-#ifdef ARDUINO
-
-//#ifndef UNIT_TEST
 #include <NfcAdapter.h>
 #include <SD.h>
 #include <Adafruit_Fingerprint.h>
@@ -8,7 +5,6 @@
 #include <Adafruit_TFTLCD.h> 
 #include <TouchScreen.h>
 #include <MCUFRIEND_kbv.h>
-#include <avr/wdt.h>
 
 // DEFINIÇÕES DE PINOS
 #define LCD_CS A3
@@ -60,24 +56,10 @@ const uint32_t password = 0x0; //Variaveis biometria
 Adafruit_Fingerprint fingerprintSensor = Adafruit_Fingerprint(&Serial2, password);
 int location = 0;
 
-//Variaveis de controle
 int X, Y;
-long corBot[3]     = {DESLIGADO, DESLIGADO, DESLIGADO};
-bool valid_nfc     = false;
-bool emulate_card  = false;
-bool format_system = false;
-bool valid_return  = false;
-
-void resetArduino() {
-
-  #ifdef ARDUINO
-
-    wdt_enable(WDTO_15MS); // Configura o Watchdog Timer para reiniciar em 15ms
-    while (true) {}        // Entra em loop infinito até o watchdog acionar o reset
-
-  #endif
-
-}
+long corBot[3]    = {DESLIGADO, DESLIGADO, DESLIGADO}; //Variaveis de controle
+bool valid_nfc    = false;
+bool emulate_card = false;
 
 TSPoint waitTouch() {
   TSPoint p;
@@ -95,22 +77,30 @@ TSPoint waitTouch() {
 
 String read_SD(int fileNumber) {
 
+  // Monta o nome do arquivo com base no número fornecido
   String fileName = "card" + String(fileNumber) + ".txt";
 
-  Iniciate_SD();
+  // Inicializa o cartão SD
+  if (!SD.begin(chipSelect)) {
+    Serial.println("Erro ao inicializar o cartão SD");
+    return "";
+  }
 
+  // Abre o arquivo em modo leitura
   File myFile = SD.open(fileName);
   if (myFile) {
     Serial.print("Lendo o conteúdo de ");
     Serial.println(fileName);
 
+    // Lê o conteúdo do arquivo e armazena na String `fileContent`
     String fileContent = "";
     while (myFile.available()) {
       fileContent += (char)myFile.read();
     }
     myFile.close(); // Fecha o arquivo após a leitura
 
-    String decryptedContent = encrypt(fileContent, encryptionKey);
+    // Descriptografa o conteúdo lido
+    String decryptedContent = encrypt(fileContent, encryptionKey); // Usa a mesma função para descriptografar
     return decryptedContent;
   } else {
     Serial.print("Erro ao abrir ");
@@ -134,7 +124,7 @@ void setup() {
   Serial1.begin(9600);
   
   tft.reset();
-  tft.begin(0x9341);
+  tft.begin(0x9341); // CÓDIGO DO DRIVER DO SEU DISPLAY
   tft.setRotation(2);
   tft.fillScreen(BLACK);
 
@@ -146,7 +136,6 @@ void setup() {
 }
 
 void loop() {
-
   TSPoint p = waitTouch();
   X = p.x; Y = p.y;
 
@@ -167,8 +156,6 @@ void DetectButtons() {
         Valid_NFC( 3 );
       }else if ( emulate_card ){
         Emulate_Card( 3 );
-      }else{
-        FormatSystem();
       }
     }
 
@@ -181,7 +168,8 @@ void DetectButtons() {
         Tela_Emulate();
       }else if ( emulate_card){
         Emulate_Card( 2 );
-      }
+      }else corBot[1] = LIGADO;
+      draw_Buttons(2);
     }
 
     if (Y > 20 && Y < 100) { // LOGICA PARA O BOTAO 1
@@ -298,75 +286,6 @@ void Tela_Emulate(){
 
 }
 
-void FormatSystem(){
-
-  Serial.println( "Inicando formatação de sistema" );
-
-  // Remove todas as digitais
-  valid_return = deleteAllFingerprints();
-
-  // Remove todos os arquivos do cartão SD
-  deleteAllSDFiles();
-
-  if ( valid_return ){
-
-    Serial.println( "Formatação realizada com sucesso" );
-
-    //Tela de sucesso
-
-    resetArduino();
-
-  }else{
-
-    Serial.println( "Erro ao formatar sistema" );
-
-    //Tela de erro
-
-    resetArduino();
-
-  }
-
-}
-
-bool deleteAllFingerprints() {
-
-  Serial.println("Deletando todas as digitais...");
-
-  if (fingerprintSensor.emptyDatabase() == FINGERPRINT_OK) {
-    Serial.println("Todas as digitais foram deletadas com sucesso!");
-    return true;
-  } else {
-    Serial.println("Falha ao deletar as digitais. Verifique o sensor.");
-    return false;
-  }
-
-}
-
-bool deleteAllSDFiles() {
-
-  Iniciate_SD();
-
-  Serial.println("Deletando todos os arquivos do cartão SD...");
-  File root = SD.open("/");
-  File file = root.openNextFile();
-
-  while (file) {
-    if (!file.isDirectory()) {
-      Serial.print("Deletando arquivo: ");
-      Serial.println(file.name());
-      if (SD.remove(file.name())) {
-        Serial.println("Arquivo deletado com sucesso!");
-      } else {
-        Serial.println("Falha ao deletar o arquivo.");
-      }
-    }
-    file.close();
-    file = root.openNextFile();
-  }
-  root.close();
-  Serial.println("Todos os arquivos foram deletados do cartão SD.");
-}
-
 void Emulate_Card( int card_select ){
 
   Serial.println ("Emulando NFC");
@@ -426,6 +345,10 @@ void Valid_NFC( int fileNumber ){
 
 // Função para escrever no SD
 void Write_SD(String encryptedData, int fileNumber) {
+  if (!SD.begin(chipSelect)) {
+    Serial.println("Erro ao inicializar o cartão SD");
+    return;
+  }
   
   // Cria o nome do arquivo com base no número
   String fileName = "card" + String(fileNumber) + ".txt";
@@ -555,22 +478,3 @@ bool checkFingerprint() {
   //Quanto mais alta a confiança melhor
   Serial.print("Digital encontrada!");
 }  //checkFingerprint
-
-void Iniciate_SD(){
-  // Inicializa o cartão SD
-  if (!SD.begin(chipSelect)) {
-    Serial.println("Erro ao inicializar o cartão SD");
-  }
-}
-
-//#endif
-
-#else
-
-#include <iostream>
-int main() {
-    std::cout << "Simulando ambiente Arduino\n";
-    return 0;
-}
-
-#endif
